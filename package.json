@@ -1,0 +1,30 @@
+{
+  "name": "sekit",
+  "version": "1.0.0",
+  "description": "Social engineering toolkit",
+  "main": "cli.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/duanckham/sekit.git"
+  },
+  "keywords": [
+    "social",
+    "engineering",
+    "toolkit"
+  ],
+  "bin": {
+    "pelf": "cli.js"
+  },
+  "author": "DUANCKHAM",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/duanckham/sekit/issues"
+  },
+  "homepage": "https://github.com/duanckham/sekit#readme",
+  "dependencies": {
+    "readline": "^1.3.0"
+  }
+}
