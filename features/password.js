@@ -17,7 +17,10 @@ function ask(questions) {
 
   return new Promise(async resolve => {
     for (let i = 0; i < questions.length; i++) {
-      answers[questions[i].key] = await askQuestion(questions[i].question);
+      let { key, question, multiple } = questions[i];
+      let answer = await askQuestion(`> ${question}${(multiple ? ' (separate by space)' : '')}`);
+
+      answers[key] = multiple ? answer.split(' ') : answer;
     }
 
     resolve(answers);
@@ -33,18 +36,58 @@ function askQuestion(question) {
 exports.do = async outputFile => {
   let answers = await ask([
     {
-      key: 'actual_name',
-      question: 'Target actual name (separate by space)',
+      key: 'actualName',
+      question: 'Actual name',
     },
     {
-      key: 'network_name',
-      question: 'Target network name (separate by space)',
+      key: 'networkName',
+      question: 'Network name',
+      multiple: true,
     },
     {
-      key: 'network_id',
-      question: 'Target network id',
+      key: 'networkID',
+      question: 'Network ID',
+      multiple: true,
+    },
+    {
+      key: 'qq',
+      question: 'QQ',
+    },
+    {
+      key: 'mobile',
+      question: 'Mobile number',
+    },
+    {
+      key: 'email',
+      question: 'Email',
+    },
+    {
+      key: 'birthday',
+      question: 'Birthday (YYYYMMDD)',
+    },
+    {
+      key: 'usedPasswords',
+      question: 'Used passwords',
+      multiple: true,
+    },
+    {
+      key: 'possiblePrefix',
+      question: 'Possible prefix',
+      multiple: true,
+    },
+    {
+      key: 'possibleSuffix',
+      question: 'Possible suffix',
+      multiple: true,
+    },
+    {
+      key: 'keywords',
+      question: 'Keywords',
+      multiple: true,
     },
   ]);
 
   console.log(answers);
+
+  let seeds = [];
 };
