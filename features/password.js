@@ -1,3 +1,4 @@
+const fs = require('fs');
 const _ = require('lodash');
 const readline = require('readline');
 
@@ -7,6 +8,7 @@ const rl = readline.createInterface({
 });
 
 const EMPTY = '';
+const SYMBOLS = ['!', '@', '#', '$', '%', '^', '&', '*', '_', '-' , '.'];
 
 function mixParameters(parameters) {
   return parameters.reduce((item, property) => {
@@ -22,7 +24,7 @@ function ask(questions) {
   return new Promise(async resolve => {
     for (let i = 0; i < questions.length; i++) {
       let { key, question, multiple } = questions[i];
-      let answer = await askQuestion(`> ${question}${(multiple ? ' (separate by space)' : '')}`);
+      let answer = await askQuestion(`< ${question}${(multiple ? ' (separate by space)' : '')}`);
 
       answers[key] = multiple ? answer.split(' ') : answer;
     }
@@ -75,20 +77,15 @@ function dismemberingChineseNames(data) {
   return words;
 }
 
-function dismemberingUsedPasswords(data) {
-  let prefixList = [];
-  let suffixList = [];
-  let keywordList = [];
-
-  for (let i = 0; i < data.length; i++) {
-    // yqy123456
-    if (/[\D]+[\d]+/.test(data[i])) {
-      console.log(data[i]);
-    }
-  }
+function dismemberingBirthday(data) {
+  return [
+    data,
+    data.substr(0, 4),
+    data.substr(4, 4),
+    data.substr(2, 6),
+    `${parseInt(data.substr(4, 2))}${parseInt(data.substr(6, 2))}`,
+  ];
 }
-
-console.log(dismemberingUsedPasswords(['yqy11112222', 'yueqingyu', '123456']));
 
 exports.do = async outputFile => {
   let answers = await ask([
@@ -111,26 +108,17 @@ exports.do = async outputFile => {
       question: 'Mobile number',
     },
     {
-      key: 'email',
-      question: 'Email',
-    },
-    {
       key: 'birthday',
       question: 'Birthday (YYYYMMDD)',
     },
     {
-      key: 'usedPasswords',
-      question: 'Used passwords',
+      key: 'possiblePrefixes',
+      question: 'Possible prefixes',
       multiple: true,
     },
     {
-      key: 'possiblePrefix',
-      question: 'Possible prefix',
-      multiple: true,
-    },
-    {
-      key: 'possibleSuffix',
-      question: 'Possible suffix',
+      key: 'possibleSuffixes',
+      question: 'Possible suffixes',
       multiple: true,
     },
     {
@@ -140,31 +128,80 @@ exports.do = async outputFile => {
     },
   ]);
 
-  console.log(answers);
+  let samples = {
+    prefixes: [EMPTY],
+    keywords: [EMPTY],
+    symbols: [EMPTY, ...SYMBOLS],
+  };
 
-  let seeds = [
-    [EMPTY], // Prefix
-    [EMPTY], // Key
-    [EMPTY], // Joiner
-  ];
+  // Prefixes
+  if (answers.possiblePrefixes.length) {
+    samples.prefixes = samples.prefixes.concat(answers.possiblePrefixes);
+  }
 
-  // Prefix
-  if (answers.possiblePrefix.length) {
-    seeds[0] = seeds[0].concat(answers.possiblePrefix);
+  if (answers.possibleSuffixes.length) {
+    samples.prefixes = samples.prefixes.concat(answers.possibleSuffixes);
   }
 
   if (answers.actualName.length) {
-    seeds[0] = seeds[0].concat(dismemberingChineseNames(answers.actualName));
+    samples.prefixes = samples.prefixes.concat(dismemberingChineseNames(answers.actualName));
   }
 
   if (answers.networkID.length) {
-    seeds[0] = seeds[0].concat(answers.networkID);
+    samples.prefixes = samples.prefixes.concat(answers.networkID);
+    samples.keywords = samples.keywords.concat(answers.networkID);
   }
 
+  // Keywords
+  if (answers.qq.length) {
+    samples.keywords = samples.keywords.concat(answers.qq);
+  }
 
+  if (answers.mobile.length) {
+    samples.keywords = samples.keywords.concat([answers.mobile, answers.mobile.substr(-4)]);
+  }
 
-  // Keyword
-  if (answers.networkName)
+  if (answers.birthday.length) {
+    samples.keywords = samples.keywords.concat(dismemberingBirthday(answers.birthday));
+  }
 
-  console.log(seeds);
+  if (answers.keywords.length) {
+    samples.keywords = samples.keywords.concat(answers.keywords);
+  }
+
+  let passwordsSetA = mixParameters([
+    [...samples.symbols],
+    [...samples.prefixes],
+    [...samples.symbols],
+    [...samples.keywords],
+    [...samples.symbols],
+  ]);
+
+  let passwordsSetB = mixParameters([
+    [...samples.symbols],
+    [...samples.keywords],
+    [...samples.symbols],
+    [...samples.prefixes],
+    [...samples.symbols],
+  ]);
+
+  console.log(`> Generating passwords...`);
+
+  passwordsSetA = passwordsSetA.map(item => item.join('')).filter(item => item.length >= 6 && item.length <= 20);
+  passwordsSetB = passwordsSetB.map(item => item.join('')).filter(item => item.length >= 6 && item.length <= 20);
+
+  let result = _.uniq([...passwordsSetA, ...passwordsSetB]);
+  let logger = fs.createWriteStream(`${outputFile}-${Date.now()}.txt`, { flags: 'a' });
+
+  console.log(`> Creating passwords file, count: ${result.length}.`);
+
+  for (let i = 0; i < result.length; i++) {
+    logger.write(result[i] + '\n');
+  }
+
+  logger.end();
+  rl.close();
+
+  console.log(`> Done.`);
 };
+

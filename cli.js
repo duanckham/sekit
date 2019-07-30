@@ -19,7 +19,7 @@ function main() {
 function help() {
   console.log('This toolkit contains the following commands: (npx sekit [command])');
   console.log('');
-  console.log('  - p/password [output_file]');
+  console.log('  - p/password [output_file_name]');
 }
 
 main();
